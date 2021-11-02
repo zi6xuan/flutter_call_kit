@@ -320,7 +320,11 @@ class FlutterCallKit {
   ///
   /// The [uuid] used for [startCall] or [displayIncomingCall]
   /// [reason] for the end call one of [EndReason]
-  Future<void> reportEndCallWithUUID(String uuid, EndReason reason) async {
+  Future<void> reportEndCallWithUUID(String? uuid, EndReason reason) async {
+    if (uuid == null) {
+      throw Exception(
+          'reportEndCallWithUUID. Check uuid, it should not be null');
+    }
     if (!Platform.isIOS) {
       return;
     }

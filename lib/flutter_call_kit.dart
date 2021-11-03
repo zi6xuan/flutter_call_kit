@@ -109,8 +109,8 @@ class IOSOptions {
       "appName": appName,
       "imageName": imageName,
       "ringtoneSound": ringtoneSound,
-      "maximumCallGroups": maximumCallGroups?.toString(),
-      "maximumCallsPerCallGroup": maximumCallsPerCallGroup?.toString(),
+      "maximumCallGroups": maximumCallGroups.toString(),
+      "maximumCallsPerCallGroup": maximumCallsPerCallGroup.toString(),
       "supportsVideo": supportsVideo,
       "includesCallsInRecents": includesCallsInRecents,
     };

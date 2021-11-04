@@ -341,10 +341,10 @@ static CXProvider* sharedProvider;
                 callUpdate.remoteHandle = startCallAction.handle;
                 callUpdate.hasVideo = startCallAction.video;
                 callUpdate.localizedCallerName = startCallAction.contactIdentifier;
-                callUpdate.supportsDTMF = YES;
-                callUpdate.supportsHolding = YES;
-                callUpdate.supportsGrouping = YES;
-                callUpdate.supportsUngrouping = YES;
+                callUpdate.supportsDTMF = NO;
+                callUpdate.supportsHolding = NO;
+                callUpdate.supportsGrouping = NO;
+                callUpdate.supportsUngrouping = NO;
                 [self.callKitProvider reportCallWithUUID:startCallAction.callUUID updated:callUpdate];
             }
             if (result) {
@@ -569,8 +569,10 @@ continueUserActivity:(NSUserActivity *)userActivity
     //do this first, audio sessions are flakey
     [self configureAudioSession];
     //tell the JS to actually make the call
-    [_channel invokeMethod:kDidReceiveStartCallAction arguments:@{ @"callUUID": [action.callUUID.UUIDString lowercaseString], @"handle": action.handle.value }];
-    [action fulfill];
+    [_channel invokeMethod:kDidReceiveStartCallAction arguments:@{ @"callUUID": [action.callUUID.UUIDString lowercaseString], @"handle": action.handle.value } result:^(id  _Nullable result) {
+        [action fulfill];
+    }];
+    
 }
 
 // Answering incoming call
@@ -580,8 +582,10 @@ continueUserActivity:(NSUserActivity *)userActivity
     NSLog(@"[FlutterCallKitPlugin][CXProviderDelegate][provider:performAnswerCallAction]");
 #endif
     [self configureAudioSession];
-    [_channel invokeMethod:kPerformAnswerCallAction arguments:@{ @"callUUID": [action.callUUID.UUIDString lowercaseString] }];
-    [action fulfill];
+    [_channel invokeMethod:kPerformAnswerCallAction arguments:@{ @"callUUID": [action.callUUID.UUIDString lowercaseString] } result:^(id  _Nullable result) {
+        [action fulfill];
+    }];
+    
 }
 
 // Ending incoming call
@@ -590,25 +594,31 @@ continueUserActivity:(NSUserActivity *)userActivity
 #ifdef DEBUG
     NSLog(@"[FlutterCallKitPlugin][CXProviderDelegate][provider:performEndCallAction]");
 #endif
-    [_channel invokeMethod:kPerformEndCallAction arguments:@{ @"callUUID": [action.callUUID.UUIDString lowercaseString] }];
-    [action fulfill];
+    [_channel invokeMethod:kPerformEndCallAction arguments:@{ @"callUUID": [action.callUUID.UUIDString lowercaseString] } result:^(id  _Nullable result) {
+        [action fulfill];
+    }];
 }
+
 
 -(void)provider:(CXProvider *)provider performSetHeldCallAction:(CXSetHeldCallAction *)action
 {
 #ifdef DEBUG
     NSLog(@"[FlutterCallKitPlugin][CXProviderDelegate][provider:performSetHeldCallAction]");
 #endif
-    [_channel invokeMethod:kDidToggleHoldAction arguments:@{ @"hold": @(action.onHold), @"callUUID": [action.callUUID.UUIDString lowercaseString] }];
-    [action fulfill];
+    [_channel invokeMethod:kDidToggleHoldAction arguments:@{ @"hold": @(action.onHold), @"callUUID": [action.callUUID.UUIDString lowercaseString] } result:^(id  _Nullable result) {
+        [action fulfill];
+    }];
+    
 }
 
 - (void)provider:(CXProvider *)provider performPlayDTMFCallAction:(CXPlayDTMFCallAction *)action {
 #ifdef DEBUG
     NSLog(@"[FlutterCallKitPlugin][CXProviderDelegate][provider:performPlayDTMFCallAction]");
 #endif
-    [_channel invokeMethod:kDidPerformDTMFAction arguments:@{ @"digits": action.digits, @"callUUID": [action.callUUID.UUIDString lowercaseString] }];
-    [action fulfill];
+    [_channel invokeMethod:kDidPerformDTMFAction arguments:@{ @"digits": action.digits, @"callUUID": [action.callUUID.UUIDString lowercaseString] } result:^(id  _Nullable result) {
+        [action fulfill];
+    }];
+    
 }
 
 -(void)provider:(CXProvider *)provider performSetMutedCallAction:(CXSetMutedCallAction *)action
@@ -616,8 +626,10 @@ continueUserActivity:(NSUserActivity *)userActivity
 #ifdef DEBUG
     NSLog(@"[FlutterCallKitPlugin][CXProviderDelegate][provider:performSetMutedCallAction]");
 #endif
-    [_channel invokeMethod:kDidPerformSetMutedCallAction arguments:@{ @"muted": @(action.muted), @"callUUID": [action.callUUID.UUIDString lowercaseString] }];
-    [action fulfill];
+    [_channel invokeMethod:kDidPerformSetMutedCallAction arguments:@{ @"muted": @(action.muted), @"callUUID": [action.callUUID.UUIDString lowercaseString] } result:^(id  _Nullable result) {
+        [action fulfill];
+    }];
+    
 }
 
 - (void)provider:(CXProvider *)provider timedOutPerformingAction:(CXAction *)action

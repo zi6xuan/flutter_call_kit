@@ -1,6 +1,6 @@
 #import "FlutterCallKitPlugin.h"
 
-#import <AVFoundation/AVAudioSession.h>
+#import <AVFoundation/AVFoundation.h>
 
 #ifdef DEBUG
 static int const OUTGOING_CALL_WAKEUP_DELAY = 10;
@@ -130,7 +130,7 @@ static CXProvider* sharedProvider;
     NSLog(@"[FlutterCallKitPlugin][setup] options = %@", options);
 #endif
     _version = [[[NSProcessInfo alloc] init] operatingSystemVersion];
-    self.callKitCallController = [[CXCallController alloc] init];
+    self.callKitCallController = [[CXCallController alloc] initWithQueue:dispatch_get_main_queue()];
     NSDictionary *settings = [[NSMutableDictionary alloc] initWithDictionary:options];
     // Store settings in NSUserDefault
     [[NSUserDefaults standardUserDefaults] setObject:settings forKey:@"FlutterCallKitPluginSettings"];
@@ -159,7 +159,7 @@ static CXProvider* sharedProvider;
     NSString* handleType = arguments[@"handleType"];
     NSNumber* video = arguments[@"video"];
     NSString* localizedCallerName = arguments[@"localizedCallerName"];
-    [FlutterCallKitPlugin reportNewIncomingCall:uuidString handle:handle handleType:handleType hasVideo:[video boolValue] localizedCallerName:localizedCallerName fromPushKit:NO];
+    [FlutterCallKitPlugin reportNewIncomingCall:uuidString handle:handle handleType:handleType hasVideo:[video boolValue] localizedCallerName:localizedCallerName fromPushKit:NO completion:nil];
     result(nil);
 }
 
@@ -323,7 +323,7 @@ static CXProvider* sharedProvider;
     NSLog(@"[FlutterCallKitPlugin][requestTransaction] transaction = %@", transaction);
 #endif
     if (self.callKitCallController == nil) {
-        self.callKitCallController = [[CXCallController alloc] init];
+        self.callKitCallController = [[CXCallController alloc] initWithQueue:dispatch_get_main_queue()];
     }
     [self.callKitCallController requestTransaction:transaction completion:^(NSError * _Nullable error) {
         if (error != nil) {
@@ -502,6 +502,7 @@ continueUserActivity:(NSUserActivity *)userActivity
                      hasVideo:(BOOL)hasVideo
           localizedCallerName:(NSString * _Nullable)localizedCallerName
                   fromPushKit:(BOOL)fromPushKit
+                   completion: (void (^)(void))completion
 {
 #ifdef DEBUG
     NSLog(@"[FlutterCallKitPlugin][reportNewIncomingCall] uuidString = %@, handle = %@, handleType = %@, hasVideo = %@, localizedCallerName = %@, fromPushKit = %@", uuidString, handle, handleType, @(hasVideo), localizedCallerName, @(fromPushKit) );
@@ -522,7 +523,10 @@ continueUserActivity:(NSUserActivity *)userActivity
     [sharedProvider reportNewIncomingCallWithUUID:uuid update:callUpdate completion:^(NSError * _Nullable error) {
         [[NSNotificationCenter defaultCenter] postNotificationName:kIncomingCallNotification
                                                             object:self
-                                                          userInfo:@{ @"error": error ? error.localizedDescription : [NSNull null], @"callUUID": uuidString, @"handle": handle, @"localizedCallerName": localizedCallerName, @"fromPushKit": @(fromPushKit)}];
+                                                          userInfo:@{ @"error": error ? error.localizedDescription : @"", @"callUUID": [uuidString lowercaseString], @"handle": handle, @"localizedCallerName": localizedCallerName, @"fromPushKit":[NSNumber numberWithBool:fromPushKit] }];
+        if(completion!=nil){
+            completion();
+        }
     }];
 }
 

@@ -10,7 +10,7 @@ static int const OUTGOING_CALL_WAKEUP_DELAY = 5;
 
 static NSString *const kHandleStartCallNotification = @"handleStartCallNotification";
 static NSString *const kDidReceiveStartCallAction = @"didReceiveStartCallAction";
-static NSString *const kPerformAnswerCallAction = @"performAnswerCallAction";
+static NSString *const kPerformAnswerCallAction = @"onPerformAnswerCallAction";
 static NSString *const kPerformEndCallAction = @"performEndCallAction";
 static NSString *const kDidActivateAudioSession = @"didActivateAudioSession";
 static NSString *const kDidDeactivateAudioSession = @"didDeactivateAudioSession";
@@ -117,8 +117,10 @@ static CXProvider* sharedProvider;
         [self setMutedCall:call.arguments result:result];
     }else if ([@"updateDisplay" isEqualToString:method]) {
         [self updateDisplay:call.arguments result:result];
-    }else if ([@"setOnHold" isEqualToString:method]) {
+    }if ([@"setOnHoldCall" isEqualToString:method]) {
         [self setOnHold:call.arguments result:result];
+    }if ([@"enableSpeaker" isEqualToString:method]) {
+        [self enableSpeaker:call.arguments result:result];
     }else {
         result(FlutterMethodNotImplemented);
     }
@@ -222,6 +224,32 @@ static CXProvider* sharedProvider;
     [transaction addAction:setHeldCallAction];
     
     [self requestTransaction:transaction result:result];
+}
+
+- (void)enableSpeaker:(NSDictionary *)arguments result:(FlutterResult)result
+{
+    NSNumber* enable = arguments[@"enable"];
+#ifdef DEBUG
+    NSLog(@"[FlutterCallKitPlugin][enableSpeaker] enableSpeaker = %d",  [enable boolValue]);
+#endif
+    AVAudioSession* audioSession = [AVAudioSession sharedInstance];
+    [audioSession setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:
+     AVAudioSessionCategoryOptionAllowBluetooth|
+     AVAudioSessionCategoryOptionAllowBluetoothA2DP error:nil];
+    [audioSession setMode:AVAudioSessionModeVoiceChat error:nil];
+    
+    double sampleRate = 44100.0;
+    [audioSession setPreferredSampleRate:sampleRate error:nil];
+    
+    NSTimeInterval bufferDuration = .005;
+    [audioSession setPreferredIOBufferDuration:bufferDuration error:nil];
+    
+    NSError* error;
+    [audioSession overrideOutputAudioPort:enable.boolValue ? AVAudioSessionPortOverrideSpeaker : AVAudioSessionPortOverrideNone error:&error];
+    if(error != nil){
+        NSLog(@"[FlutterCallKitPlugin][enableSpeaker] error = %@",error );
+    }
+    [audioSession setActive:TRUE error:nil];
 }
 
 - (void)reportConnectingOutgoingCallWithUUID:(NSString *)uuidString result:(FlutterResult)result
@@ -512,10 +540,10 @@ continueUserActivity:(NSUserActivity *)userActivity
     NSLog(@"[FlutterCallKitPlugin][reportNewIncomingCall] uuid = %@", uuid );
     CXCallUpdate *callUpdate = [[CXCallUpdate alloc] init];
     callUpdate.remoteHandle = [[CXHandle alloc] initWithType:_handleType value:handle];
-    callUpdate.supportsDTMF = YES;
-    callUpdate.supportsHolding = YES;
-    callUpdate.supportsGrouping = YES;
-    callUpdate.supportsUngrouping = YES;
+    callUpdate.supportsDTMF = NO;
+    callUpdate.supportsHolding = NO;
+    callUpdate.supportsGrouping = NO;
+    callUpdate.supportsUngrouping = NO;
     callUpdate.hasVideo = hasVideo;
     callUpdate.localizedCallerName = localizedCallerName;
     

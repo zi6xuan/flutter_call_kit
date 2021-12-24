@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -195,8 +194,8 @@ class FlutterCallKit {
         if (_onProviderReset == null) {
           return null;
         }
-        return _onProviderReset!();
-      case "performAnswerCallAction":
+        return _onProviderReset();
+      case "onPerformAnswerCallAction":
         if (_performAnswerCallAction == null) {
           return null;
         }
@@ -301,9 +300,6 @@ class FlutterCallKit {
   }
 
   Future<void> reportConnectingOutgoingCallWithUUID(String uuid) async {
-    if (!Platform.isIOS) {
-      return;
-    }
     await _channel.invokeMethod<void>(
         'reportConnectingOutgoingCallWithUUID', uuid);
   }
@@ -374,7 +370,7 @@ class FlutterCallKit {
     }
     await _channel.invokeMethod<void>('setMutedCall', {
       'uuid': uuid,
-      'mute': mute,
+      'muted': mute,
     });
   }
 
@@ -426,7 +422,7 @@ class FlutterCallKit {
     if (!Platform.isIOS) {
       return;
     }
-    await _channel.invokeMethod<void>('setMutedCall', {
+    await _channel.invokeMethod<void>('setOnHoldCall', {
       'uuid': uuid,
       'hold': hold,
     });
@@ -437,6 +433,10 @@ class FlutterCallKit {
       return;
     }
     await _channel.invokeMethod<void>('setReachable');
+  }
+
+  Future<void> enableSpeaker(bool enable) async {
+    await _channel.invokeMethod<void>('enableSpeaker', {'enable': enable});
   }
 
   static String handleTypeToString(HandleType handleType) {
